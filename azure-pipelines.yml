@@ -1,0 +1,65 @@
+parameters:
+  - name: environment
+    displayName: environment
+    type: string
+    default: test
+  - name: serviceConnectionName
+    displayName: serviceConnection
+    type: string
+    default: new-core-terraform-svc-dev
+trigger:
+- none
+
+pool:
+  vmImage: 'ubuntu-latest'
+variables:
+- group: webhookTestBackendStorageAccount
+stages:
+  - stage: terraforming
+    jobs:
+      - job: terraforming
+        continueOnError: false
+        steps:
+        - checkout: self
+        - task: TerraformInstaller@1
+          displayName: installingTerraform
+          inputs:
+            terraformVersion: '1.9.3'
+        - task: TerraformTaskV4@4
+          displayName: terraformInit
+          inputs:
+            provider: 'azurerm'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+            command: 'init'
+            backendServiceArm: ${{ parameters.serviceConnectionName }}
+            backendAzureRmResourceGroupName: '$(backendAzureRmResourceGroupName)'
+            backendAzureRmStorageAccountName: '$(backendAzureRmStorageAccountName)'
+            backendAzureRmContainerName: '$(backendAzureRmContainerName)'
+            backendAzureRmKey: '${{ parameters.environment}}$(backendAzureRmKey)'
+        - task: TerraformTaskV4@4
+          displayName: terraformValidate
+          inputs:
+            provider: 'azurerm'
+            command: 'validate'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+        - task: TerraformTaskV4@4
+          displayName: terraformPlan
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            commandOptions: '-out=tfplan'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+            environmentServiceNameAzureRM: ${{ parameters.serviceConnectionName }}
+        - task: PublishPipelineArtifact@1
+          inputs:
+            targetPath: '$(System.DefaultWorkingDirectory)'
+            artifact: 'tfplan'
+            publishLocation: 'pipeline'
+        - task: TerraformTaskV4@4
+          displayName: terraformApply
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            commandOptions: 'tfplan'
+            workingDirectory: '$(System.DefaultWorkingDirectory)'
+            environmentServiceNameAzureRM: ${{ parameters.serviceConnectionName}}
