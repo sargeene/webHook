@@ -6,6 +6,7 @@ terraform {
     }
   }
   backend "azurerm" {
+    # Uncomment this section if deploying locally and manually enter the key and container name when prompted
     # storage_account_name = "webhookstoreaccount"
     # container_name       = "webhookcontainer"
     # key                  = "webhook.tfstate"

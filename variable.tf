@@ -32,7 +32,7 @@ variable "role_definition_name" {
   description = "The role definition name for the role assignment."
   type        = string
   default     = "AcrPull"
-}
+}#AcrPull authotizes the kubernetes to pull dosker image from the container
 
 variable "aks-name" {
   description = "azure kubernetes cluster name"
